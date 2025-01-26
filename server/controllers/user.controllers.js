@@ -7,10 +7,10 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js";
 const options = {
   httpOnly: true,
   secure: false,
-  sameSite: 'None',
-  domain: '.localhost', 
-   path: '/',
-   withCredentials: true,
+  sameSite: "None",
+  domain: ".localhost",
+  path: "/",
+  withCredentials: true,
 };
 
 const generateAccessAndRefreshToken = async (userId) => {
@@ -70,20 +70,10 @@ const registerUser = asyncHandler(async (req, res) => {
 
   // return response, with success or error
 
-  res.status(200).json({
-    status: 200,
-    user,
-    message: "User regsitered successfully",
-  });
+  res
+    .status(200)
+    .json(new ApiResponse(200, { user }, "User registered successfully"));
 });
-
-const uploadProfileImage = async (req, res) => {
-  //upload image on cloudinary
-
-  const profileImageLocalPath = req?.file?.path;
-
-  const profileImage = await uploadOnCloudinary(profileImageLocalPath);
-};
 
 const loginUser = asyncHandler(async (req, res) => {
   // Get data from request
@@ -138,7 +128,6 @@ const loginUser = asyncHandler(async (req, res) => {
 });
 
 const logoutUser = asyncHandler(async (req, res) => {
-
   await User.findByIdAndUpdate(req.user?.user_id, {
     $set: {
       refreshToken: undefined,
@@ -151,4 +140,72 @@ const logoutUser = asyncHandler(async (req, res) => {
     .clearCookie("refreshToken")
     .json(new ApiResponse(200, {}, "User logged out successfully"));
 });
-export { registerUser, uploadProfileImage, loginUser, logoutUser };
+
+const uploadProfileImage = asyncHandler(async (req, res) => {
+  //get image from req.file
+
+  const profileImageLocalPath = req?.file?.path;
+
+  //validate if image is present
+  if (!profileImageLocalPath) {
+    throw new ApiError(400, "Profile image is required");
+  }
+
+  //upload image to cloudinary
+  const profileImage = await uploadOnCloudinary(profileImageLocalPath);
+
+  //validate if uploaded properly
+  if (!profileImage) {
+    throw new ApiError(500, "Unable to upload profile image");
+  }
+
+  //update url in database
+
+  const user = await User.findByIdAndUpdate(
+    req.user?._id,
+    {
+      $set: {
+        profileImage: profileImage?.url,
+      },
+    },
+    { new: true }
+  );
+  console.log(profileImage.url, user);
+
+  //return response
+  res
+    .status(200)
+    .json(new ApiResponse(200, { user }, "Profile image updated successfully"));
+});
+
+const changePassword = asyncHandler(async (req, res) => {
+  //get current password, new password  from req.body
+  const { currentPassword, newPassword } = req.body;
+  //validate the data
+  if ([currentPassword, newPassword].some((field) => field?.trim() === "")) {
+    throw new ApiError(409, "All fields are required");
+  }
+
+  //check if current password is correct
+  const user = await User.findById(req.user?._id);
+  const isPasswordCorrect = await user.isPasswordCorrect(currentPassword);
+
+  if (!isPasswordCorrect) {
+    throw new ApiError(401, "Invalid password");
+  }
+  //update the password in database
+  user.password = newPassword;
+  user.save({ validateBeforeSave: false });
+  //return response
+  res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Password changed successfully"));
+});
+
+export {
+  registerUser,
+  uploadProfileImage,
+  loginUser,
+  logoutUser,
+  changePassword,
+};
