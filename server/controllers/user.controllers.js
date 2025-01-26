@@ -4,13 +4,18 @@ import ApiResponse from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 
+const options = {
+  httpOnly: true,
+  secure: false,
+  sameSite: 'None',
+  domain: '.localhost', 
+   path: '/',
+   withCredentials: true,
+};
+
 const generateAccessAndRefreshToken = async (userId) => {
   try {
-    console.log(userId);
-    
     const user = await User.findById(userId);
-    console.log(user);
-    
     const accessToken = user.generateAccessToken();
     const refreshToken = user.generateRefreshToken();
 
@@ -117,11 +122,6 @@ const loginUser = asyncHandler(async (req, res) => {
     "-password -refreshToken"
   );
 
-  const options = {
-    // httpOnly: true,
-    // secure: true,
-  };
-
   //return response, with success or error
 
   res
@@ -136,4 +136,19 @@ const loginUser = asyncHandler(async (req, res) => {
       )
     );
 });
-export { registerUser, uploadProfileImage, loginUser };
+
+const logoutUser = asyncHandler(async (req, res) => {
+
+  await User.findByIdAndUpdate(req.user?.user_id, {
+    $set: {
+      refreshToken: undefined,
+    },
+  });
+
+  return res
+    .status(200)
+    .clearCookie("accessToken")
+    .clearCookie("refreshToken")
+    .json(new ApiResponse(200, {}, "User logged out successfully"));
+});
+export { registerUser, uploadProfileImage, loginUser, logoutUser };
