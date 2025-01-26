@@ -1,8 +1,9 @@
 import { User } from "../models/user.model.js";
 import ApiError from "../utils/ApiError.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 
-const registerUser = async (req, res) => {
+const registerUser = asyncHandler(async (req, res) => {
   // Get data from request
   const { firstName, lastName, email, password } = req.body;
 
@@ -23,8 +24,6 @@ const registerUser = async (req, res) => {
     throw new ApiError(409, "User with this email already exists");
   }
 
-
-
   // create user and save to database
 
   const user = await User.create({
@@ -40,7 +39,7 @@ const registerUser = async (req, res) => {
   const createdUser = await User.findById(user?._id).select(
     "-password -refreshToken"
   );
-  
+
   if (!createdUser) {
     throw new ApiError(500, "Something went wrong while registering the user");
   }
@@ -52,7 +51,7 @@ const registerUser = async (req, res) => {
     user,
     message: "User regsitered successfully",
   });
-};
+});
 
 const uploadProfileImage = async (req, res) => {
   //upload image on cloudinary
