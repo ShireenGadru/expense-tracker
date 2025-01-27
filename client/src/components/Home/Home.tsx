@@ -13,12 +13,20 @@ export const Home = () => {
   };
   return (
     <div>
-      Home
+      <p className="text-blue-500 text-3xl">Expense Tracker App</p>
       <br />
-      <Link to="/register">Register User </Link>
+      <button>
+        {" "}
+        <Link to="/register">Register User </Link>
+      </button>
+
       <br />
-      <Link to="/login">Login </Link>
-      <button onClick={handleLogout}>Logout</button>
+      <button>
+        {" "}
+        <Link to="/login">Login </Link>
+      </button>
+
+      {/* <button onClick={handleLogout}>Logout</button> */}
     </div>
   );
 };

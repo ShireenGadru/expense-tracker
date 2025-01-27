@@ -8,6 +8,9 @@ function App() {
   return (
     <>
       <Link to="/">Home </Link>
+      <br />
+      <br />
+      
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/register" element={<Register />} />
